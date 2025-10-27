@@ -1,83 +1,19 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+.App {
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.site-header {
+  background-color: #fff;
+  padding: 20px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-
-.result-box {
-  margin: 18px 0;              /* space between boxes */
-  padding: 8px;               /* inner padding */
-  border: 1px solid #e6e6e6;   /* light gray border */
-  border-radius: 8px;          /* rounded corners */
-  background: #007BFF;         /* light background */
-  transition: box-shadow 0.2s; /* smooth hover effect */
-  max-width: 300px;
-  max-height: 300px;
-
-  background-image: url("/Textures/dark-wood.png");
-  background-repeat: repeat;
-
-  background-size: cover; /* or try contain, or remove if you want tiling */
-
-}
-
-.result-box:hover {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* subtle hover */
-}
-
-.result-box h3 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #111;                  /* ⬅️ ensure dark text */
-}
-
-.result-box small {
-  color: #666;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.result-box p {
-  margin: 0;
-  font-size: 16px;
-  color: #222;                  /* readable on light bg */
+.site-footer {
+  background-color: #fff;
+  padding: 20px;
+  border-top: 1px solid #ddd;
+  margin-top: 40px;
 }
