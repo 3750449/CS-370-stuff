@@ -1,0 +1,10 @@
+.main-nav a {
+  margin-left: 15px;
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.main-nav a:hover {
+  color: #007bff;
+}
