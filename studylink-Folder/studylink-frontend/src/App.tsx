@@ -3,6 +3,7 @@ import "./App.css";
 import Grid from "./components/Grid";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
+import AuthForm from "./components/AuthForm";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       </header>
 
       <main className="container" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+        <AuthForm />
         <SearchBar />
         <Grid />
       </main>

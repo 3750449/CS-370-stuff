@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Switch driver based on env
@@ -23,6 +24,62 @@ app.get('/api/health', (_req, res) => {
     driver: useMySQL ? 'mysql' : 'sqlite',
     timestamp: new Date().toISOString(),
   });
+});
+
+// --- Minimal Auth (Demo/Test) ---
+// In-memory user store for quick testing (email -> {email, passwordHash, createdAt})
+const users = new Map();
+
+function isEduEmail(email) {
+  const basicPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!basicPattern.test(email)) return false;
+  return /\.edu$/i.test(email);
+}
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'email and password are required' });
+    }
+    if (!isEduEmail(email)) {
+      return res.status(400).json({ error: 'email must be a valid .edu address' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'password must be at least 8 characters' });
+    }
+    if (users.has(email.toLowerCase())) {
+      return res.status(409).json({ error: 'account already exists' });
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    const createdAt = new Date().toISOString();
+    users.set(email.toLowerCase(), { email, passwordHash, createdAt });
+    return res.status(201).json({ email, createdAt });
+  } catch (err) {
+    console.error('POST /api/auth/register failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'email and password are required' });
+    }
+    const record = users.get(email.toLowerCase());
+    if (!record) {
+      return res.status(401).json({ error: 'invalid credentials' });
+    }
+    const ok = await bcrypt.compare(password, record.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'invalid credentials' });
+    }
+    return res.json({ email: record.email, createdAt: record.createdAt });
+  } catch (err) {
+    console.error('POST /api/auth/login failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
 });
 
 // List notes (optionally by course)
