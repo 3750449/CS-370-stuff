@@ -1,0 +1,60 @@
+.auth-card {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.auth-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.auth-header button {
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth-header button.active {
+  background: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+.auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.auth-form input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.auth-form button[type="submit"] {
+  background: #0d6efd;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth-message {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+
