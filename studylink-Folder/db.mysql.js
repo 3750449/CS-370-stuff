@@ -37,7 +37,8 @@ async function init() {
 }
 init().catch(err => {
   console.error('MySQL init error:', err);
-  process.exit(1);
+  console.error('⚠️  Server will continue but database operations may fail until connection is established');
+  console.error('⚠️  Make sure SSH tunnel is running: ssh -L 3306:127.0.0.1:3306 ekhaing@blue.cs.sonoma.edu -N');
 });
 
 async function all(sql, params = []) {

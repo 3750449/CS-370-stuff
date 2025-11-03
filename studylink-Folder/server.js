@@ -4,9 +4,8 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-// Switch driver based on env
-const useMySQL = !!process.env.MYSQL_HOST;
-const db = useMySQL ? require('./db.mysql') : require('./db'); // db.mysql.js or db.js (sqlite)
+// Use MySQL database
+const db = require('./db.mysql');
 
 const app = express();
 const PORT = process.env.PORT || 8199;
@@ -16,20 +15,23 @@ app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(distDir));
 
+// User table configuration
+const USER_TABLE = 'User';
+const USER_ID_COL = 'UserNameID';
+const EMAIL_COL = 'email';
+const PASSWORD_COL = 'passwordhash';
+
 // --- API ---
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     service: 'studylink-api',
-    driver: useMySQL ? 'mysql' : 'sqlite',
+    driver: 'mysql',
     timestamp: new Date().toISOString(),
   });
 });
 
-// --- Minimal Auth (Demo/Test) ---
-// In-memory user store for quick testing (email -> {email, passwordHash, createdAt})
-const users = new Map();
-
+// --- Authentication ---
 function isEduEmail(email) {
   const basicPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!basicPattern.test(email)) return false;
@@ -48,16 +50,43 @@ app.post('/api/auth/register', async (req, res) => {
     if (password.length < 8) {
       return res.status(400).json({ error: 'password must be at least 8 characters' });
     }
-    if (users.has(email.toLowerCase())) {
+    
+    // Check if user already exists
+    const existingUsers = await db.all(
+      `SELECT ${USER_ID_COL} FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [email.toLowerCase()]
+    );
+    if (existingUsers.length > 0) {
       return res.status(409).json({ error: 'account already exists' });
     }
+    
+    // Hash password and insert into User table
     const passwordHash = await bcrypt.hash(password, 10);
-    const createdAt = new Date().toISOString();
-    users.set(email.toLowerCase(), { email, passwordHash, createdAt });
-    return res.status(201).json({ email, createdAt });
+    const userNameId = email.toLowerCase().substring(0, 16); // varchar(16) limit for UserNameID
+    
+    await db.run(
+      `INSERT INTO \`${USER_TABLE}\` (${USER_ID_COL}, ${EMAIL_COL}, ${PASSWORD_COL}) VALUES (?, ?, ?)`,
+      [userNameId, email.toLowerCase(), passwordHash]
+    );
+    
+    // Fetch the created user
+    const rows = await db.all(
+      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [email.toLowerCase()]
+    );
+    
+    return res.status(201).json({ 
+      id: rows[0].id,
+      email: rows[0].email
+    });
   } catch (err) {
     console.error('POST /api/auth/register failed:', err);
-    return res.status(500).json({ error: 'internal server error' });
+    console.error('Error details:', err.message, err.code, err.errno);
+    // Handle MySQL duplicate entry error
+    if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
+      return res.status(409).json({ error: 'account already exists' });
+    }
+    return res.status(500).json({ error: 'internal server error', details: err.message });
   }
 });
 
@@ -67,15 +96,27 @@ app.post('/api/auth/login', async (req, res) => {
     if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'email and password are required' });
     }
-    const record = users.get(email.toLowerCase());
-    if (!record) {
+    
+    // Find user in User table
+    const rows = await db.all(
+      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [email.toLowerCase()]
+    );
+    
+    if (rows.length === 0) {
       return res.status(401).json({ error: 'invalid credentials' });
     }
+    
+    const record = rows[0];
     const ok = await bcrypt.compare(password, record.passwordHash);
     if (!ok) {
       return res.status(401).json({ error: 'invalid credentials' });
     }
-    return res.json({ email: record.email, createdAt: record.createdAt });
+    
+    return res.json({ 
+      id: record.id,
+      email: record.email
+    });
   } catch (err) {
     console.error('POST /api/auth/login failed:', err);
     return res.status(500).json({ error: 'internal server error' });
