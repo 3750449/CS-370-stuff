@@ -57,8 +57,14 @@ export default function AuthForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@school.edu"
+            maxLength={100}
             required
           />
+          {email.length >= 100 && (
+            <div className="email-limit-warning">
+              Email should be less than 100 characters
+            </div>
+          )}
         </label>
         <label>
           Password

@@ -123,6 +123,49 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.delete('/api/auth/account', async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'email and password are required' });
+    }
+    
+    // Find user and verify credentials
+    const rows = await db.all(
+      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [email.toLowerCase()]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'invalid credentials' });
+    }
+    
+    const record = rows[0];
+    const ok = await bcrypt.compare(password, record.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'invalid credentials' });
+    }
+    
+    // Delete the user account
+    const info = await db.run(
+      `DELETE FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [email.toLowerCase()]
+    );
+    
+    if (info.changes === 0 && !info.affectedRows) {
+      return res.status(404).json({ error: 'account not found' });
+    }
+    
+    return res.status(200).json({ 
+      message: 'Account deleted successfully',
+      email: record.email
+    });
+  } catch (err) {
+    console.error('DELETE /api/auth/account failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
 // List notes (optionally by course)
 app.get('/api/notes', async (req, res) => {
   try {
