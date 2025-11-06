@@ -112,13 +112,13 @@ headers: {
 **Content-Type:** `multipart/form-data`  
 **Request:**
 - Form field: `file` (the file to upload)
-- Optional: `course` (string)
+- Optional: `classId` (number)
 
 **Example (JavaScript):**
 ```javascript
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
-formData.append('course', 'CS370'); // optional
+formData.append('classId', '123'); // optional
 
 fetch('/api/files/upload', {
   method: 'POST',
@@ -136,7 +136,14 @@ fetch('/api/files/upload', {
   "originalName": "assignment1.pdf",
   "size": 524288,
   "fileType": "application/pdf",
-  "course": "CS370",
+  "classId": 123,
+  "class": {
+    "id": 123,
+    "subject": "CS",
+    "catalog": "370",
+    "title": "Software Engineering",
+    "csNumber": "CS370"
+  },
   "uploadedAt": "2024-01-15T10:30:00.000Z"
 }
 ```
@@ -152,12 +159,12 @@ fetch('/api/files/upload', {
 **Requires:** None (public - anyone can view)  
 **Query Parameters:**
 - `search` (optional): Search by filename
-- `course` (optional): Filter by course (future feature)
+- `classId` (optional): Filter by class ID
 
 **Example:**
 ```
 GET /api/files?search=assignment
-GET /api/files?course=CS370
+GET /api/files?classId=123
 ```
 
 **Response (200):**
@@ -168,7 +175,14 @@ GET /api/files?course=CS370
     "originalName": "assignment1.pdf",
     "size": "524288",
     "fileType": "application/pdf",
-    "uploadedAt": "2024-01-15T10:30:00.000Z"
+    "uploadedAt": "2024-01-15T10:30:00.000Z",
+    "class": {
+      "id": 123,
+      "subject": "CS",
+      "catalog": "370",
+      "title": "Software Engineering",
+      "csNumber": "CS370"
+    }
   },
   {
     "id": 122,
