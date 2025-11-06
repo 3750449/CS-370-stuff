@@ -5,6 +5,7 @@ export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -12,6 +13,14 @@ export default function AuthForm() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    
+    // Validate password confirmation for registration
+    if (mode === 'register' && password !== confirmPassword) {
+      setMessage('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const res = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
@@ -23,11 +32,24 @@ export default function AuthForm() {
         setMessage(data?.error || 'Request failed');
       } else {
         setMessage(mode === 'register' ? `Registered: ${data.email}` : `Logged in: ${data.email}`);
+        // Clear form on success
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (err) {
       setMessage('Network error');
     } finally {
       setLoading(false);
+    }
+  }
+  
+  function handleModeChange(newMode: 'login' | 'register') {
+    setMode(newMode);
+    setMessage(null);
+    // Clear confirm password when switching to login
+    if (newMode === 'login') {
+      setConfirmPassword('');
     }
   }
 
@@ -36,14 +58,14 @@ export default function AuthForm() {
       <div className="auth-header">
         <button
           className={mode === 'register' ? 'active' : ''}
-          onClick={() => setMode('register')}
+          onClick={() => handleModeChange('register')}
           type="button"
         >
           Register (.edu)
         </button>
         <button
           className={mode === 'login' ? 'active' : ''}
-          onClick={() => setMode('login')}
+          onClick={() => handleModeChange('login')}
           type="button"
         >
           Login
@@ -57,8 +79,14 @@ export default function AuthForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@school.edu"
+            maxLength={100}
             required
           />
+          {email.length >= 100 && (
+            <div className="email-limit-warning">
+              Email should be less than 100 characters
+            </div>
+          )}
         </label>
         <label>
           Password
@@ -71,6 +99,24 @@ export default function AuthForm() {
             required
           />
         </label>
+        {mode === 'register' && (
+          <label>
+            Confirm Password
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
+              minLength={8}
+              required
+            />
+            {confirmPassword && password !== confirmPassword && (
+              <div className="password-mismatch">
+                Passwords do not match
+              </div>
+            )}
+          </label>
+        )}
         <button type="submit" disabled={loading}>
           {loading ? 'Working…' : mode === 'register' ? 'Create account' : 'Sign in'}
         </button>
