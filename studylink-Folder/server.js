@@ -18,10 +18,40 @@ app.use(express.json({ limit: '50mb' })); // Increased for file uploads
 app.use(express.static(distDir));
 
 // JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  console.error('❌ ERROR: JWT_SECRET environment variable is required');
+  console.error('   Please set JWT_SECRET in your .env file');
+  console.error('   Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d'; // 7 days
 
-// Authentication middleware
+/**
+ * Authentication middleware that verifies JWT tokens from the Authorization header.
+ * 
+ * Extracts the Bearer token from the Authorization header, verifies it using JWT_SECRET,
+ * and attaches the decoded user information to req.user for use in route handlers.
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} req.headers - Request headers object
+ * @param {string} [req.headers.authorization] - Authorization header in format "Bearer <token>"
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {void|Object} Returns 401 error if no token, 403 if invalid/expired, otherwise calls next()
+ * 
+ * @example
+ * // Protect a route
+ * app.get('/api/protected', authenticateToken, (req, res) => {
+ *   // req.user.id and req.user.email are available here
+ *   res.json({ message: 'Access granted', user: req.user });
+ * });
+ * 
+ * @throws {401} If no Authorization header or token is missing
+ * @throws {403} If token is invalid, expired, or cannot be verified
+ * 
+ * @since 1.0.0
+ */
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -39,7 +69,32 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Optional authentication middleware (for routes that work with or without login)
+/**
+ * Optional authentication middleware that attempts to verify JWT tokens but doesn't require them.
+ * 
+ * Similar to authenticateToken, but allows routes to work with or without authentication.
+ * If a valid token is provided, req.user is set. If no token or invalid token, the request
+ * continues without req.user. Useful for routes that have different behavior for logged-in users.
+ * 
+ * @param {Object} req - Express request object
+ * @param {Object} req.headers - Request headers object
+ * @param {string} [req.headers.authorization] - Authorization header in format "Bearer <token>"
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @returns {void} Always calls next(), regardless of token validity
+ * 
+ * @example
+ * // Route that works for both authenticated and anonymous users
+ * app.get('/api/files', optionalAuth, (req, res) => {
+ *   if (req.user) {
+ *     // User is logged in - show personalized content
+ *   } else {
+ *     // User is anonymous - show public content
+ *   }
+ * });
+ * 
+ * @since 1.0.0
+ */
 function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -63,7 +118,31 @@ const USER_ID_COL = 'UserNameID';
 const EMAIL_COL = 'email';
 const PASSWORD_COL = 'passwordhash';
 
-// --- API ---
+/**
+ * Health check endpoint to verify API and database connectivity.
+ * 
+ * Returns basic service information including database driver and current timestamp.
+ * Useful for monitoring, load balancers, and deployment verification.
+ * 
+ * @route GET /api/health
+ * @access Public
+ * @returns {Object} 200 - Service health status
+ * @returns {boolean} 200.ok - Service is running
+ * @returns {string} 200.service - Service name
+ * @returns {string} 200.driver - Database driver in use
+ * @returns {string} 200.timestamp - Current ISO timestamp
+ * 
+ * @example
+ * // Response
+ * {
+ *   "ok": true,
+ *   "service": "studylink-api",
+ *   "driver": "mysql",
+ *   "timestamp": "2024-01-15T10:30:00.000Z"
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -73,13 +152,68 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// --- Authentication ---
+/**
+ * Validates that an email address is a valid .edu email address.
+ * 
+ * Checks both basic email format and ensures the domain ends with .edu.
+ * Used for user registration to restrict access to educational institutions.
+ * 
+ * @param {string} email - Email address to validate
+ * @returns {boolean} True if email is valid and ends with .edu, false otherwise
+ * 
+ * @example
+ * isEduEmail('student@university.edu'); // true
+ * isEduEmail('user@gmail.com'); // false
+ * isEduEmail('invalid-email'); // false
+ * 
+ * @since 1.0.0
+ */
 function isEduEmail(email) {
   const basicPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!basicPattern.test(email)) return false;
   return /\.edu$/i.test(email);
 }
 
+/**
+ * Register a new user account with .edu email validation.
+ * 
+ * Creates a new user account after validating email format (.edu only),
+ * password requirements (minimum 8 characters), and checking for duplicates.
+ * Password is hashed using bcrypt before storage. Returns JWT token for immediate authentication.
+ * 
+ * @route POST /api/auth/register
+ * @access Public
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's .edu email address
+ * @param {string} req.body.password - User's password (minimum 8 characters)
+ * @returns {Object} 201 - User created successfully
+ * @returns {string} 201.token - JWT authentication token
+ * @returns {Object} 201.user - User information
+ * @returns {string} 201.user.id - User ID (UserNameID)
+ * @returns {string} 201.user.email - User's email address
+ * @returns {Object} 400 - Invalid input (email format, password length)
+ * @returns {Object} 409 - Account already exists
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * POST /api/auth/register
+ * {
+ *   "email": "student@university.edu",
+ *   "password": "password123"
+ * }
+ * 
+ * // Response (201)
+ * {
+ *   "token": "eyJhbGc...",
+ *   "user": {
+ *     "id": "student@univer",
+ *     "email": "student@university.edu"
+ *   }
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -144,6 +278,45 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+/**
+ * Authenticate an existing user and return JWT token.
+ * 
+ * Validates user credentials by comparing provided password with stored bcrypt hash.
+ * Returns JWT token for authenticated session management. Token expires in 7 days.
+ * 
+ * @route POST /api/auth/login
+ * @access Public
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password
+ * @returns {Object} 200 - Login successful
+ * @returns {string} 200.token - JWT authentication token (expires in 7 days)
+ * @returns {Object} 200.user - User information
+ * @returns {string} 200.user.id - User ID
+ * @returns {string} 200.user.email - User's email address
+ * @returns {Object} 400 - Missing email or password
+ * @returns {Object} 401 - Invalid credentials (wrong email or password)
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * POST /api/auth/login
+ * {
+ *   "email": "student@university.edu",
+ *   "password": "password123"
+ * }
+ * 
+ * // Response (200)
+ * {
+ *   "token": "eyJhbGc...",
+ *   "user": {
+ *     "id": "student@univer",
+ *     "email": "student@university.edu"
+ *   }
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -187,6 +360,41 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+/**
+ * Delete a user account after verifying credentials.
+ * 
+ * Permanently deletes user account from the database. Requires email and password
+ * verification for security. This action cannot be undone.
+ * 
+ * @route DELETE /api/auth/account
+ * @access Public (requires email + password verification)
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.email - User's email address
+ * @param {string} req.body.password - User's password for verification
+ * @returns {Object} 200 - Account deleted successfully
+ * @returns {string} 200.message - Success message
+ * @returns {string} 200.email - Deleted user's email
+ * @returns {Object} 400 - Missing email or password
+ * @returns {Object} 401 - Invalid credentials
+ * @returns {Object} 404 - Account not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * DELETE /api/auth/account
+ * {
+ *   "email": "student@university.edu",
+ *   "password": "password123"
+ * }
+ * 
+ * // Response (200)
+ * {
+ *   "message": "Account deleted successfully",
+ *   "email": "student@university.edu"
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.delete('/api/auth/account', async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -243,7 +451,63 @@ const upload = multer({
   },
 });
 
-// Upload file - requires login
+/**
+ * Upload a file to the system with optional class association.
+ * 
+ * Accepts file uploads via multipart/form-data. Files are stored in the database
+ * as BLOBs in the image_store table. Metadata is stored in Note_Files table.
+ * Maximum file size is 50MB. Requires JWT authentication.
+ * 
+ * @route POST /api/files/upload
+ * @access Private (requires JWT token)
+ * @param {Object} req.user - User information from JWT (set by authenticateToken middleware)
+ * @param {string} req.user.id - User ID of the uploader
+ * @param {Object} req.file - Uploaded file object (from multer)
+ * @param {string} req.file.originalname - Original filename
+ * @param {Buffer} req.file.buffer - File content as buffer
+ * @param {number} req.file.size - File size in bytes
+ * @param {string} req.file.mimetype - MIME type of the file
+ * @param {Object} req.body - Form data
+ * @param {string} [req.body.classId] - Optional class ID to associate file with
+ * @returns {Object} 201 - File uploaded successfully
+ * @returns {number} 201.id - File ID in database
+ * @returns {string} 201.originalName - Original filename
+ * @returns {number} 201.size - File size in bytes
+ * @returns {string} 201.fileType - MIME type of the file
+ * @returns {number|null} 201.classId - Associated class ID (if provided)
+ * @returns {Object|null} 201.class - Class information (if classId provided)
+ * @returns {string} 201.uploadedAt - ISO timestamp of upload
+ * @returns {Object} 400 - No file uploaded, invalid classId, or class not found
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request (multipart/form-data)
+ * POST /api/files/upload
+ * Headers: { "Authorization": "Bearer <token>" }
+ * Form Data:
+ *   - file: <file binary>
+ *   - classId: "123" (optional)
+ * 
+ * // Response (201)
+ * {
+ *   "id": 456,
+ *   "originalName": "assignment.pdf",
+ *   "size": 524288,
+ *   "fileType": "application/pdf",
+ *   "classId": 123,
+ *   "class": {
+ *     "id": 123,
+ *     "subject": "CS",
+ *     "catalog": "370",
+ *     "title": "Software Engineering",
+ *     "csNumber": "CS370"
+ *   },
+ *   "uploadedAt": "2024-01-15T10:30:00.000Z"
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.post('/api/files/upload', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -333,7 +597,51 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
   }
 });
 
-// List all files with search and class filtering - open to anyone
+/**
+ * List all uploaded files with optional search and class filtering.
+ * 
+ * Returns a paginated list of all files in the system. Supports searching by filename
+ * and filtering by class ID. This endpoint is publicly accessible (no authentication required).
+ * Files are returned with their metadata including class information if associated.
+ * 
+ * @route GET /api/files
+ * @access Public
+ * @param {Object} req.query - Query parameters
+ * @param {string} [req.query.search] - Search term to filter files by filename (case-insensitive partial match)
+ * @param {string} [req.query.classId] - Filter files by class ID (must be valid integer)
+ * @returns {Array<Object>} 200 - Array of file objects
+ * @returns {number} 200[].id - File ID
+ * @returns {string} 200[].originalName - Original filename
+ * @returns {string} 200[].size - File size as string
+ * @returns {string} 200[].fileType - MIME type
+ * @returns {string} 200[].uploadedAt - ISO timestamp of upload
+ * @returns {Object|null} 200[].class - Class information if file is associated with a class
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * GET /api/files?search=assignment&classId=123
+ * 
+ * // Response (200)
+ * [
+ *   {
+ *     "id": 456,
+ *     "originalName": "assignment1.pdf",
+ *     "size": "524288",
+ *     "fileType": "application/pdf",
+ *     "uploadedAt": "2024-01-15T10:30:00.000Z",
+ *     "class": {
+ *       "id": 123,
+ *       "subject": "CS",
+ *       "catalog": "370",
+ *       "title": "Software Engineering",
+ *       "csNumber": "CS370"
+ *     }
+ *   }
+ * ]
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/files', async (req, res) => {
   try {
     const { search, classId } = req.query;
@@ -403,7 +711,49 @@ app.get('/api/files', async (req, res) => {
   }
 });
 
-// Get list of available classes - open to anyone
+/**
+ * Get list of available classes with optional search and subject filtering.
+ * 
+ * Returns all classes from the classes table. Supports searching by class name,
+ * CS number, or subject+catalog combination. Also supports filtering by subject code.
+ * This endpoint is publicly accessible.
+ * 
+ * @route GET /api/classes
+ * @access Public
+ * @param {Object} req.query - Query parameters
+ * @param {string} [req.query.search] - Search term to filter classes by name, CS number, or subject+catalog
+ * @param {string} [req.query.subject] - Filter classes by subject code (e.g., "CS", "MATH")
+ * @returns {Array<Object>} 200 - Array of class objects
+ * @returns {number} 200[].id - Class ID
+ * @returns {string} 200[].subject - Subject code (e.g., "CS")
+ * @returns {string} 200[].catalog - Catalog number (e.g., "370")
+ * @returns {string} 200[].title - Full class title
+ * @returns {string} 200[].csNumber - CS course number
+ * @returns {number} 200[].minUnits - Minimum units
+ * @returns {number} 200[].maxUnits - Maximum units
+ * @returns {number} 200[].compUnits - Completion units
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * GET /api/classes?search=CS370&subject=CS
+ * 
+ * // Response (200)
+ * [
+ *   {
+ *     "id": 123,
+ *     "subject": "CS",
+ *     "catalog": "370",
+ *     "title": "Software Engineering",
+ *     "csNumber": "CS370",
+ *     "minUnits": 3.0,
+ *     "maxUnits": 3.0,
+ *     "compUnits": 3.0
+ *   }
+ * ]
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/classes', async (req, res) => {
   try {
     const { search, subject } = req.query;
@@ -449,7 +799,34 @@ app.get('/api/classes', async (req, res) => {
   }
 });
 
-// Download file by ID - open to anyone
+/**
+ * Download a file by its ID.
+ * 
+ * Retrieves file binary data from the database and streams it to the client
+ * with appropriate headers for file download. This endpoint is publicly accessible.
+ * 
+ * @route GET /api/files/:id
+ * @access Public
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - File ID (must be positive integer)
+ * @returns {Buffer} 200 - File binary data
+ * @returns {Object} 400 - Invalid file ID format
+ * @returns {Object} 404 - File not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * GET /api/files/456
+ * 
+ * // Response Headers
+ * Content-Type: application/octet-stream
+ * Content-Disposition: attachment; filename="assignment.pdf"
+ * Content-Length: 524288
+ * 
+ * // Response Body: Binary file data
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/files/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -480,7 +857,35 @@ app.get('/api/files/:id', async (req, res) => {
   }
 });
 
-// Delete file - only owner can delete
+/**
+ * Delete a file from the system (only file owner can delete).
+ * 
+ * Permanently removes a file from both image_store and Note_Files tables.
+ * Also removes all bookmarks associated with the file. Only the file owner
+ * (user who uploaded it) can delete the file. Requires JWT authentication.
+ * 
+ * @route DELETE /api/files/:id
+ * @access Private (requires JWT token, owner only)
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - File ID (must be positive integer)
+ * @param {Object} req.user - User information from JWT
+ * @param {string} req.user.id - User ID (must match file owner)
+ * @returns {void} 204 - File deleted successfully (no content)
+ * @returns {Object} 400 - Invalid file ID format
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 403 - Not authorized (not the file owner)
+ * @returns {Object} 404 - File not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * DELETE /api/files/456
+ * Headers: { "Authorization": "Bearer <token>" }
+ * 
+ * // Response (204 No Content)
+ * 
+ * @since 1.0.0
+ */
 app.delete('/api/files/:id', authenticateToken, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -524,7 +929,40 @@ app.delete('/api/files/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Bookmark a file - logged-in users only
+/**
+ * Bookmark a file for the authenticated user.
+ * 
+ * Adds a file to the user's bookmarks list. Each user can bookmark a file only once.
+ * Requires JWT authentication. Returns error if file is already bookmarked.
+ * 
+ * @route POST /api/files/:id/bookmark
+ * @access Private (requires JWT token)
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - File ID to bookmark (must be positive integer)
+ * @param {Object} req.user - User information from JWT
+ * @param {string} req.user.id - User ID
+ * @returns {Object} 201 - File bookmarked successfully
+ * @returns {string} 201.message - Success message
+ * @returns {number} 201.fileId - Bookmarked file ID
+ * @returns {Object} 400 - Invalid file ID format
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 404 - File not found
+ * @returns {Object} 409 - File already bookmarked
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * POST /api/files/456/bookmark
+ * Headers: { "Authorization": "Bearer <token>" }
+ * 
+ * // Response (201)
+ * {
+ *   "message": "File bookmarked successfully",
+ *   "fileId": 456
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.post('/api/files/:id/bookmark', authenticateToken, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -574,7 +1012,54 @@ app.post('/api/files/:id/bookmark', authenticateToken, async (req, res) => {
   }
 });
 
-// Get bookmarked files - logged-in users only
+/**
+ * Get all bookmarked files for the authenticated user.
+ * 
+ * Returns a list of all files the user has bookmarked, including file metadata
+ * and class information. Results are ordered by bookmark creation date (newest first).
+ * Requires JWT authentication.
+ * 
+ * @route GET /api/files/bookmarks
+ * @access Private (requires JWT token)
+ * @param {Object} req.user - User information from JWT
+ * @param {string} req.user.id - User ID
+ * @returns {Array<Object>} 200 - Array of bookmarked file objects
+ * @returns {number} 200[].id - File ID
+ * @returns {string} 200[].originalName - Original filename
+ * @returns {string} 200[].size - File size as string
+ * @returns {string} 200[].fileType - MIME type
+ * @returns {string} 200[].uploadedAt - ISO timestamp of upload
+ * @returns {string} 200[].bookmarkedAt - ISO timestamp when file was bookmarked
+ * @returns {Object|null} 200[].class - Class information if file is associated with a class
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * GET /api/files/bookmarks
+ * Headers: { "Authorization": "Bearer <token>" }
+ * 
+ * // Response (200)
+ * [
+ *   {
+ *     "id": 456,
+ *     "originalName": "assignment.pdf",
+ *     "size": "524288",
+ *     "fileType": "application/pdf",
+ *     "uploadedAt": "2024-01-15T10:30:00.000Z",
+ *     "bookmarkedAt": "2024-01-16T14:20:00.000Z",
+ *     "class": {
+ *       "id": 123,
+ *       "subject": "CS",
+ *       "catalog": "370",
+ *       "title": "Software Engineering",
+ *       "csNumber": "CS370"
+ *     }
+ *   }
+ * ]
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/files/bookmarks', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -627,7 +1112,33 @@ app.get('/api/files/bookmarks', authenticateToken, async (req, res) => {
   }
 });
 
-// Unbookmark a file - logged-in users only
+/**
+ * Remove a file from the user's bookmarks.
+ * 
+ * Removes a bookmark association between the authenticated user and a file.
+ * Requires JWT authentication. Returns 404 if bookmark doesn't exist.
+ * 
+ * @route DELETE /api/files/:id/bookmark
+ * @access Private (requires JWT token)
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - File ID to unbookmark (must be positive integer)
+ * @param {Object} req.user - User information from JWT
+ * @param {string} req.user.id - User ID
+ * @returns {void} 204 - Bookmark removed successfully (no content)
+ * @returns {Object} 400 - Invalid file ID format
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 404 - Bookmark not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * DELETE /api/files/456/bookmark
+ * Headers: { "Authorization": "Bearer <token>" }
+ * 
+ * // Response (204 No Content)
+ * 
+ * @since 1.0.0
+ */
 app.delete('/api/files/:id/bookmark', authenticateToken, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -654,7 +1165,41 @@ app.delete('/api/files/:id/bookmark', authenticateToken, async (req, res) => {
   }
 });
 
-// List notes (optionally by course)
+/**
+ * List all notes with optional course filtering.
+ * 
+ * Returns all notes from the notes table. Supports optional filtering by course.
+ * Results are ordered by ID in descending order (newest first). This endpoint is publicly accessible.
+ * 
+ * @route GET /api/notes
+ * @access Public
+ * @param {Object} req.query - Query parameters
+ * @param {string} [req.query.course] - Filter notes by course code
+ * @returns {Array<Object>} 200 - Array of note objects
+ * @returns {number} 200[].id - Note ID
+ * @returns {string} 200[].title - Note title
+ * @returns {string} 200[].course - Course code
+ * @returns {string} 200[].content - Note content
+ * @returns {string} 200[].createdAt - ISO timestamp of creation
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * GET /api/notes?course=CS370
+ * 
+ * // Response (200)
+ * [
+ *   {
+ *     "id": 1,
+ *     "title": "Lecture Notes",
+ *     "course": "CS370",
+ *     "content": "Note content...",
+ *     "createdAt": "2024-01-15T10:30:00.000Z"
+ *   }
+ * ]
+ * 
+ * @since 1.0.0
+ */
 app.get('/api/notes', async (req, res) => {
   try {
     const { course } = req.query;
@@ -671,7 +1216,48 @@ app.get('/api/notes', async (req, res) => {
   }
 });
 
-// Create a new note
+/**
+ * Create a new note.
+ * 
+ * Creates a new note entry in the notes table. All fields (title, course, content)
+ * are required. The createdAt timestamp is automatically set by MySQL.
+ * This endpoint is publicly accessible.
+ * 
+ * @route POST /api/notes
+ * @access Public
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.title - Note title (max 200 characters)
+ * @param {string} req.body.course - Course code (max 50 characters)
+ * @param {string} req.body.content - Note content (MEDIUMTEXT)
+ * @returns {Object} 201 - Note created successfully
+ * @returns {number} 201.id - Note ID
+ * @returns {string} 201.title - Note title
+ * @returns {string} 201.course - Course code
+ * @returns {string} 201.content - Note content
+ * @returns {string} 201.createdAt - ISO timestamp of creation
+ * @returns {Object} 400 - Missing required fields (title, course, content)
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * POST /api/notes
+ * {
+ *   "title": "Lecture Notes",
+ *   "course": "CS370",
+ *   "content": "Today we learned about..."
+ * }
+ * 
+ * // Response (201)
+ * {
+ *   "id": 1,
+ *   "title": "Lecture Notes",
+ *   "course": "CS370",
+ *   "content": "Today we learned about...",
+ *   "createdAt": "2024-01-15T10:30:00.000Z"
+ * }
+ * 
+ * @since 1.0.0
+ */
 app.post('/api/notes', async (req, res) => {
   try {
     const { title, course, content } = req.body || {};
@@ -700,7 +1286,29 @@ app.post('/api/notes', async (req, res) => {
   }
 });
 
-// Delete note by ID
+/**
+ * Delete a note by its ID.
+ * 
+ * Permanently removes a note from the notes table. This action cannot be undone.
+ * This endpoint is publicly accessible.
+ * 
+ * @route DELETE /api/notes/:id
+ * @access Public
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - Note ID (must be positive integer)
+ * @returns {void} 204 - Note deleted successfully (no content)
+ * @returns {Object} 400 - Invalid note ID format
+ * @returns {Object} 404 - Note not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * DELETE /api/notes/1
+ * 
+ * // Response (204 No Content)
+ * 
+ * @since 1.0.0
+ */
 app.delete('/api/notes/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
