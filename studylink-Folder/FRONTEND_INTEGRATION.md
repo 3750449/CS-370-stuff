@@ -54,7 +54,7 @@ headers: {
 {
   "token": "eyJhbGc...",
   "user": {
-    "id": "student@sch",
+    "id": "student@school.edu",
     "email": "student@school.edu"
   }
 }
@@ -77,7 +77,7 @@ headers: {
 {
   "token": "eyJhbGc...",
   "user": {
-    "id": "student@sch",
+    "id": "student@school.edu",
     "email": "student@school.edu"
   }
 }
@@ -267,7 +267,14 @@ fetch(`/api/files/${fileId}`)
     "size": "524288",
     "fileType": "application/pdf",
     "uploadedAt": "2024-01-15T10:30:00.000Z",
-    "bookmarkedAt": "2024-01-16T14:20:00.000Z"
+    "bookmarkedAt": "2024-01-16T14:20:00.000Z",
+    "class": {
+      "id": 123,
+      "subject": "CS",
+      "catalog": "370",
+      "title": "Software Engineering",
+      "csNumber": "CS370"
+    }
   }
 ]
 ```
@@ -293,6 +300,7 @@ fetch(`/api/files/${fileId}`)
 - Store JWT token in `localStorage` after login/register
 - Update user state with token
 - Handle token expiration (401/403 errors)
+- Remember: `user.id` returned from the API is the user's email address (used as the primary key in the database).
 
 **Example:**
 ```typescript

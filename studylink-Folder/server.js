@@ -114,8 +114,7 @@ function optionalAuth(req, res, next) {
 
 // User table configuration
 const USER_TABLE = 'User';
-const USER_ID_COL = 'UserNameID';
-const EMAIL_COL = 'email';
+const EMAIL_COL = 'email'; // email is now the primary key
 const PASSWORD_COL = 'passwordhash';
 
 /**
@@ -189,7 +188,7 @@ function isEduEmail(email) {
  * @returns {Object} 201 - User created successfully
  * @returns {string} 201.token - JWT authentication token
  * @returns {Object} 201.user - User information
- * @returns {string} 201.user.id - User ID (UserNameID)
+ * @returns {string} 201.user.id - User ID (email address)
  * @returns {string} 201.user.email - User's email address
  * @returns {Object} 400 - Invalid input (email format, password length)
  * @returns {Object} 409 - Account already exists
@@ -229,7 +228,7 @@ app.post('/api/auth/register', async (req, res) => {
     
     // Check if user already exists
     const existingUsers = await db.all(
-      `SELECT ${USER_ID_COL} FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      `SELECT ${EMAIL_COL} FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
       [email.toLowerCase()]
     );
     if (existingUsers.length > 0) {
@@ -238,24 +237,24 @@ app.post('/api/auth/register', async (req, res) => {
     
     // Hash password and insert into User table
     const passwordHash = await bcrypt.hash(password, 10);
-    const userNameId = email.toLowerCase().substring(0, 16); // varchar(16) limit for UserNameID
     
     await db.run(
-      `INSERT INTO \`${USER_TABLE}\` (${USER_ID_COL}, ${EMAIL_COL}, ${PASSWORD_COL}) VALUES (?, ?, ?)`,
-      [userNameId, email.toLowerCase(), passwordHash]
+      `INSERT INTO \`${USER_TABLE}\` (${EMAIL_COL}, ${PASSWORD_COL}) VALUES (?, ?)`,
+      [email.toLowerCase(), passwordHash]
     );
     
     // Fetch the created user
     const rows = await db.all(
-      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      `SELECT ${EMAIL_COL} AS email FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
       [email.toLowerCase()]
     );
     
     const user = rows[0];
+    const userEmail = user.email;
     
-    // Create JWT token
+    // Create JWT token (email is now the id)
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: userEmail, email: userEmail },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -263,8 +262,8 @@ app.post('/api/auth/register', async (req, res) => {
     return res.status(201).json({ 
       token,
       user: {
-        id: user.id,
-        email: user.email
+        id: userEmail,
+        email: userEmail
       }
     });
   } catch (err) {
@@ -326,7 +325,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     // Find user in User table
     const rows = await db.all(
-      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      `SELECT ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
       [email.toLowerCase()]
     );
     
@@ -340,9 +339,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'invalid credentials' });
     }
     
-    // Create JWT token
+    // Create JWT token (email is now the id)
+    const userEmail = record.email;
     const token = jwt.sign(
-      { id: record.id, email: record.email },
+      { id: userEmail, email: userEmail },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -350,8 +350,8 @@ app.post('/api/auth/login', async (req, res) => {
     return res.json({ 
       token,
       user: {
-        id: record.id,
-        email: record.email
+        id: userEmail,
+        email: userEmail
       }
     });
   } catch (err) {
@@ -404,7 +404,7 @@ app.delete('/api/auth/account', async (req, res) => {
     
     // Find user and verify credentials
     const rows = await db.all(
-      `SELECT ${USER_ID_COL} AS id, ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      `SELECT ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
       [email.toLowerCase()]
     );
     
@@ -569,7 +569,7 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
         c.CS_Number AS csNumber
       FROM image_store i
       LEFT JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
-      LEFT JOIN classes c ON nf.classId = CAST(c.id AS CHAR)
+      LEFT JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
       WHERE i.id = ?`,
       [fileId]
     );
@@ -593,7 +593,11 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
     });
   } catch (err) {
     console.error('POST /api/files/upload failed:', err);
-    return res.status(500).json({ error: 'internal server error' });
+    console.error('Error details:', err.message, err.code, err.sqlMessage);
+    return res.status(500).json({ 
+      error: 'internal server error',
+      details: err.message || err.sqlMessage || 'Unknown error'
+    });
   }
 });
 
@@ -661,7 +665,7 @@ app.get('/api/files', async (req, res) => {
         c.CS_Number AS csNumber
       FROM image_store i
       LEFT JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
-      LEFT JOIN classes c ON nf.classId = CAST(c.id AS CHAR)
+      LEFT JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
     `;
     
     const params = [];
@@ -795,6 +799,56 @@ app.get('/api/classes', async (req, res) => {
     return res.json(rows);
   } catch (err) {
     console.error('GET /api/classes failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
+app.get('/api/files/bookmarks', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const sql = `
+      SELECT 
+        i.id,
+        i.image_name AS originalName,
+        COALESCE(nf.size, '0') AS size,
+        COALESCE(nf.fileType, 'application/octet-stream') AS fileType,
+        COALESCE(nf.LastUpdated, DATE_FORMAT(NOW(), '%Y-%m-%dT%H:%i:%s.%fZ')) AS uploadedAt,
+        b.createdAt AS bookmarkedAt,
+        c.id AS classId,
+        c.Subject1 AS subject,
+        c.Catalog1 AS catalog,
+        c.Long_Title AS classTitle,
+        c.CS_Number AS csNumber
+      FROM bookmarks b
+      INNER JOIN image_store i ON CAST(i.id AS CHAR) = b.fileId
+      LEFT JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
+      LEFT JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
+      WHERE b.userId = ?
+      ORDER BY b.createdAt DESC
+    `;
+
+    const rows = await db.all(sql, [userId]);
+
+    const formattedRows = rows.map(row => ({
+      id: row.id,
+      originalName: row.originalName,
+      size: row.size,
+      fileType: row.fileType,
+      uploadedAt: row.uploadedAt,
+      bookmarkedAt: row.bookmarkedAt,
+      class: row.classId ? {
+        id: Number(row.classId),
+        subject: row.subject,
+        catalog: row.catalog,
+        title: row.classTitle,
+        csNumber: row.csNumber
+      } : null
+    }));
+
+    return res.json(formattedRows);
+  } catch (err) {
+    console.error('GET /api/files/bookmarks failed:', err);
     return res.status(500).json({ error: 'internal server error' });
   }
 });
@@ -1013,106 +1067,6 @@ app.post('/api/files/:id/bookmark', authenticateToken, async (req, res) => {
 });
 
 /**
- * Get all bookmarked files for the authenticated user.
- * 
- * Returns a list of all files the user has bookmarked, including file metadata
- * and class information. Results are ordered by bookmark creation date (newest first).
- * Requires JWT authentication.
- * 
- * @route GET /api/files/bookmarks
- * @access Private (requires JWT token)
- * @param {Object} req.user - User information from JWT
- * @param {string} req.user.id - User ID
- * @returns {Array<Object>} 200 - Array of bookmarked file objects
- * @returns {number} 200[].id - File ID
- * @returns {string} 200[].originalName - Original filename
- * @returns {string} 200[].size - File size as string
- * @returns {string} 200[].fileType - MIME type
- * @returns {string} 200[].uploadedAt - ISO timestamp of upload
- * @returns {string} 200[].bookmarkedAt - ISO timestamp when file was bookmarked
- * @returns {Object|null} 200[].class - Class information if file is associated with a class
- * @returns {Object} 401 - Not authenticated
- * @returns {Object} 500 - Internal server error
- * 
- * @example
- * // Request
- * GET /api/files/bookmarks
- * Headers: { "Authorization": "Bearer <token>" }
- * 
- * // Response (200)
- * [
- *   {
- *     "id": 456,
- *     "originalName": "assignment.pdf",
- *     "size": "524288",
- *     "fileType": "application/pdf",
- *     "uploadedAt": "2024-01-15T10:30:00.000Z",
- *     "bookmarkedAt": "2024-01-16T14:20:00.000Z",
- *     "class": {
- *       "id": 123,
- *       "subject": "CS",
- *       "catalog": "370",
- *       "title": "Software Engineering",
- *       "csNumber": "CS370"
- *     }
- *   }
- * ]
- * 
- * @since 1.0.0
- */
-app.get('/api/files/bookmarks', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // Get all bookmarked files for this user with class info
-    const sql = `
-      SELECT 
-        i.id,
-        i.image_name AS originalName,
-        COALESCE(nf.size, '0') AS size,
-        COALESCE(nf.fileType, 'application/octet-stream') AS fileType,
-        COALESCE(nf.LastUpdated, DATE_FORMAT(NOW(), '%Y-%m-%dT%H:%i:%s.%fZ')) AS uploadedAt,
-        b.createdAt AS bookmarkedAt,
-        c.id AS classId,
-        c.Subject1 AS subject,
-        c.Catalog1 AS catalog,
-        c.Long_Title AS classTitle,
-        c.CS_Number AS csNumber
-      FROM bookmarks b
-      INNER JOIN image_store i ON CAST(i.id AS CHAR) = b.fileId
-      LEFT JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
-      LEFT JOIN classes c ON nf.classId = CAST(c.id AS CHAR)
-      WHERE b.userId = ?
-      ORDER BY b.createdAt DESC
-    `;
-
-    const rows = await db.all(sql, [userId]);
-    
-    // Format response with class info
-    const formattedRows = rows.map(row => ({
-      id: row.id,
-      originalName: row.originalName,
-      size: row.size,
-      fileType: row.fileType,
-      uploadedAt: row.uploadedAt,
-      bookmarkedAt: row.bookmarkedAt,
-      class: row.classId ? {
-        id: Number(row.classId),
-        subject: row.subject,
-        catalog: row.catalog,
-        title: row.classTitle,
-        csNumber: row.csNumber
-      } : null
-    }));
-
-    return res.json(formattedRows);
-  } catch (err) {
-    console.error('GET /api/files/bookmarks failed:', err);
-    return res.status(500).json({ error: 'internal server error' });
-  }
-});
-
-/**
  * Remove a file from the user's bookmarks.
  * 
  * Removes a bookmark association between the authenticated user and a file.
@@ -1212,80 +1166,9 @@ app.get('/api/notes', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error('GET /api/notes failed:', err);
-    res.status(500).json({ error: 'internal server error' });
+    return res.status(500).json({ error: 'internal server error' });
   }
 });
-
-/**
- * Create a new note.
- * 
- * Creates a new note entry in the notes table. All fields (title, course, content)
- * are required. The createdAt timestamp is automatically set by MySQL.
- * This endpoint is publicly accessible.
- * 
- * @route POST /api/notes
- * @access Public
- * @param {Object} req.body - Request body
- * @param {string} req.body.title - Note title (max 200 characters)
- * @param {string} req.body.course - Course code (max 50 characters)
- * @param {string} req.body.content - Note content (MEDIUMTEXT)
- * @returns {Object} 201 - Note created successfully
- * @returns {number} 201.id - Note ID
- * @returns {string} 201.title - Note title
- * @returns {string} 201.course - Course code
- * @returns {string} 201.content - Note content
- * @returns {string} 201.createdAt - ISO timestamp of creation
- * @returns {Object} 400 - Missing required fields (title, course, content)
- * @returns {Object} 500 - Internal server error
- * 
- * @example
- * // Request
- * POST /api/notes
- * {
- *   "title": "Lecture Notes",
- *   "course": "CS370",
- *   "content": "Today we learned about..."
- * }
- * 
- * // Response (201)
- * {
- *   "id": 1,
- *   "title": "Lecture Notes",
- *   "course": "CS370",
- *   "content": "Today we learned about...",
- *   "createdAt": "2024-01-15T10:30:00.000Z"
- * }
- * 
- * @since 1.0.0
- */
-app.post('/api/notes', async (req, res) => {
-  try {
-    const { title, course, content } = req.body || {};
-    if (!title || !course || !content) {
-      return res
-        .status(400)
-        .json({ error: 'title, course, content required' });
-    }
-
-    // Insert without createdAt — MySQL sets it
-    const info = await db.run(
-      'INSERT INTO notes (title, course, content) VALUES (?,?,?)',
-      [title, course, content]
-    );
-
-    // Fetch the new row to return with proper ISO timestamp
-    const rows = await db.all(
-      'SELECT id, title, course, content, DATE_FORMAT(createdAt, "%Y-%m-%dT%H:%i:%s.%fZ") AS createdAt FROM notes WHERE id = ?',
-      [info.lastInsertRowid || info.insertId]
-    );
-
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    console.error('POST /api/notes failed:', err);
-    res.status(500).json({ error: 'internal server error' });
-  }
-});
-
 /**
  * Delete a note by its ID.
  * 

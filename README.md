@@ -368,10 +368,6 @@ See database schema documentation for complete table structures.
 
 ---
 
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ### Development Setup
 
 1. Fork the repository
@@ -388,12 +384,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - **Jonas Setzer**
 - **Emilio Orozco**
 - **Lynn Khaing**
-
----
-
-## License
-
-[Specify your license here]
 
 ---
 

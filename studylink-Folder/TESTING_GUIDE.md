@@ -14,7 +14,13 @@
    MYSQL_DATABASE=your_database
    ```
 
-3. **Dependencies Installed**: 
+3. **Run the database migration** (command examples assume the repo root):
+   ```bash
+   mysql -u <USER> -p <DATABASE> < studylink-Folder/update_database_schema.sql
+   ```
+   This ensures all schema changes, indexes, and collations match the backend code.
+
+4. **Dependencies Installed**: 
    ```bash
    cd studylink-Folder
    npm install
@@ -42,6 +48,12 @@ You should see:
 ### Method 1: Using cURL (Command Line)
 
 ### Method 2: Using Browser (for simple GET requests)
+
+### Method 3: Automated Smoke Test (`test_automated.sh`)
+- Location: repository root (`test_automated.sh`)
+- Usage: `bash test_automated.sh http://localhost:8199`
+- Covers end-to-end auth, upload, download, bookmark, and delete flows
+- Requires `python3` on PATH (used for lightweight JSON parsing)
 
 ---
 
@@ -81,7 +93,7 @@ curl -X POST http://localhost:8199/api/auth/register \
 {
   "token": "eyJhbGc...",
   "user": {
-    "id": "student@sch",
+    "id": "student@school.edu",
     "email": "student@school.edu"
   }
 }
@@ -123,7 +135,7 @@ curl -X POST http://localhost:8199/api/auth/login \
 {
   "token": "eyJhbGc...",
   "user": {
-    "id": "student@sch",
+    "id": "student@school.edu",
     "email": "student@school.edu"
   }
 }
@@ -563,6 +575,3 @@ After testing backend:
 3. Test error handling in UI
 4. Test with multiple users
 5. Test concurrent requests
-
-
-
