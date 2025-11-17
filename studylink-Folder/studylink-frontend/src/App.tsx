@@ -1,31 +1,50 @@
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./App.css";
-import Grid from "./components/Grid";
-import Header from "./components/Header";
-import SearchBar from "./components/SearchBar";
-import AuthForm from "./components/AuthForm";
+import { useState } from 'react'
+import Header from './components/Header'
+import AuthForm from './components/AuthForm'
+import SearchBar from './components/SearchBar'
+import Grid from './components/Grid'
+import FileActions from "./components/FileActions.tsx";
+import './App.css'
+
+type PageName = 'home' | 'about' | 'account'
 
 export default function App() {
-  return (
-    <div className="page">
-      <header className="site-header">
-        <div className="container">
-          <h1>StudyLink</h1>
-          <Header />
-        </div>
-      </header>
+    const [searchTerm, setSearchTerm] = useState('')
+    const [currentPage, setCurrentPage] = useState<PageName>('home')
 
-      <main className="container" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-        <AuthForm />
-        <SearchBar />
-        <Grid />
-      </main>
+    return (
+        <div className="App">
+            {/* Pass a function to Header so it can ask to change pages */}
+            {currentPage !== 'account' && (
+                <Header onNavigate={setCurrentPage} />
+            )}
 
-      <footer className="site-footer">
-        <div className="container">
-          <small>© {new Date().getFullYear()} StudyLink</small>
+            {currentPage === 'home' && (
+                <>
+                    <SearchBar />
+                    <FileActions
+                        onUpload={() => console.log("Upload pressed")}
+                        onDownload={() => console.log("Download pressed")}
+                    />
+                    <Grid />
+                </>
+            )}
+
+            {currentPage === 'about' && (
+                <div className="page about">
+                    <h2>About StudyLink</h2>
+                    <p>Some text describing what this site does.</p>
+                </div>
+            )}
+
+            {currentPage === 'account' && (
+                <div className="page account">
+                    <AuthForm
+                        onLoginSuccess={() => setCurrentPage('home')
+                    }/>
+                </div>
+            )}
         </div>
-      </footer>
-    </div>
-  );
+    )
 }

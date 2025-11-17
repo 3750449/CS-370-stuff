@@ -1,14 +1,20 @@
-import React from 'react';
-import './Header.css';
+import React from 'react'
+import './Header.css'
 
-const Header: React.FC = () => {
-  return (
-    <nav className="main-nav">
-      <a href="#">Log In</a>
-      <a href="#">Create Account</a>
-      <a href="#">About Us</a>
-    </nav>
-  );
-};
+type PageName = 'home' | 'about' | 'account'
 
-export default Header;
+interface HeaderProps {
+    onNavigate: (page: PageName) => void
+}
+
+const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
+    return (
+        <nav className="main-nav">
+            <button onClick={() => onNavigate('home')}>Home</button>
+            <button onClick={() => onNavigate('account')}>Log In / Account</button>
+            <button onClick={() => onNavigate('about')}>About Us</button>
+        </nav>
+    )
+}
+
+export default Header
