@@ -4,13 +4,13 @@ import Header from './components/Header'
 import AuthForm from './components/AuthForm'
 import SearchBar from './components/SearchBar'
 import Grid from './components/Grid'
-import FileActions from "./components/FileActions.tsx";
+import FileActions from "./components/FileActions";
 import './App.css'
 
 type PageName = 'home' | 'about' | 'account'
 
 export default function App() {
-    const [searchTerm, setSearchTerm] = useState('')
+
     const [currentPage, setCurrentPage] = useState<PageName>('home')
 
     return (
@@ -23,10 +23,7 @@ export default function App() {
             {currentPage === 'home' && (
                 <>
                     <SearchBar />
-                    <FileActions
-                        onUpload={() => console.log("Upload pressed")}
-                        onDownload={() => console.log("Download pressed")}
-                    />
+                    <FileActions />
                     <Grid />
                 </>
             )}
@@ -41,8 +38,8 @@ export default function App() {
             {currentPage === 'account' && (
                 <div className="page account">
                     <AuthForm
-                        onLoginSuccess={() => setCurrentPage('home')
-                    }/>
+                        onLoginSuccess={() => setCurrentPage('home')}
+                    />
                 </div>
             )}
         </div>

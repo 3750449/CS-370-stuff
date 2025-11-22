@@ -41,7 +41,7 @@ export default function AuthForm({ onLoginSuccess }: AuthFormProps) {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        onLoginSuccess()
+        onLoginSuccess();
       }
     } catch (err) {
       setMessage('Network error');
