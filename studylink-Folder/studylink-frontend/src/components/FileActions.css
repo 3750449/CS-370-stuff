@@ -1,0 +1,57 @@
+.file-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.action-btn {
+    padding: 10px 20px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.action-btn:hover {
+    background-color: #0056b3;
+}
+
+.upload-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* dim background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-modal-content {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+}
+
+.upload-modal-content button {
+    margin-top: 1rem;
+    margin-right: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+}
+
+.upload-modal-content button:hover {
+    background-color: #0056b3;
+}

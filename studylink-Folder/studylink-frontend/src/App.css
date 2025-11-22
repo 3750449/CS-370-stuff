@@ -1,19 +1,22 @@
 .App {
-  text-align: center;
+    text-align: center;
+    /* New padding to keep components away from edges */
+    padding: 1rem;
+
 }
 
 .site-header {
-  background-color: #fff;
-  padding: 20px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    background-color: #fff;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.site-footer {
-  background-color: #fff;
-  padding: 20px;
-  border-top: 1px solid #ddd;
-  margin-top: 40px;
+    .site-footer {
+    background-color: #fff;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    margin-top: 40px;
 }
