@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import './AuthForm.css';
 
-export default function AuthForm() {
+
+interface AuthFormProps {
+    onLoginSuccess: () => void;
+}
+
+export default function AuthForm({ onLoginSuccess }: AuthFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,9 +41,10 @@ export default function AuthForm() {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
+        onLoginSuccess();
       }
     } catch (err) {
-      setMessage('Network error');
+      setMessage('Network error'+ err);
     } finally {
       setLoading(false);
     }
