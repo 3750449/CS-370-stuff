@@ -15,9 +15,10 @@ interface UploadPageProps {
   onUploadSuccess?: () => void;
   onNavigateToLogin?: () => void;
   onNavigateToMyUploads?: () => void;
+  onNavigateHome?: () => void;
 }
 
-export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavigateToMyUploads }: UploadPageProps) {
+export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavigateToMyUploads, onNavigateHome }: UploadPageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -158,15 +159,26 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
           <h2>Upload File</h2>
           <div className="auth-required-message">
             <p>Please log in to upload files.</p>
-            {onNavigateToLogin && (
-              <button 
-                type="button"
-                onClick={onNavigateToLogin}
-                className="login-link-button"
-              >
-                Log In / Create Account
-              </button>
-            )}
+            <div className="auth-action-buttons">
+              {onNavigateToLogin && (
+                <button 
+                  type="button"
+                  onClick={onNavigateToLogin}
+                  className="login-link-button"
+                >
+                  Log In / Create Account
+                </button>
+              )}
+              {onNavigateHome && (
+                <button 
+                  type="button"
+                  onClick={onNavigateHome}
+                  className="go-back-button"
+                >
+                  ← Go Back to Main Page
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -176,7 +188,18 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
   return (
     <div className="upload-page">
       <div className="upload-card">
-        <h2>Upload File</h2>
+        <div className="upload-header">
+          <h2>Upload File</h2>
+          {onNavigateHome && (
+            <button 
+              type="button"
+              onClick={onNavigateHome}
+              className="go-back-button go-back-header"
+            >
+              ← Go Back
+            </button>
+          )}
+        </div>
         <p className="upload-description">
           Upload course materials, notes, or study resources. Files can be associated with a specific course.
         </p>
@@ -278,11 +301,14 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
                   ))}
               </div>
             </div>
-            {selectedClassId && (
-              <div className="selected-class-display">
-                Selected: {classes.find(c => c.id.toString() === selectedClassId)?.subject} {classes.find(c => c.id.toString() === selectedClassId)?.catalog} - {classes.find(c => c.id.toString() === selectedClassId)?.title}
-              </div>
-            )}
+            {selectedClassId && (() => {
+              const selectedClass = classes.find(c => c.id.toString() === selectedClassId);
+              return selectedClass ? (
+                <div className="selected-class-display">
+                  Selected: {selectedClass.subject} {selectedClass.catalog} - {selectedClass.title}
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Submit Button */}
@@ -312,7 +338,7 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
         )}
 
         {/* Link to View All Uploads */}
-        {isAuthenticated && onNavigateToMyUploads && (
+        {onNavigateToMyUploads && (
           <div className="view-uploads-section">
             <p>
               <button

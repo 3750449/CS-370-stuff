@@ -4,7 +4,6 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const crypto = require('crypto');
 require('dotenv').config();
 
 // Use MySQL database

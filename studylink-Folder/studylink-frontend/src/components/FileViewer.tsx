@@ -69,9 +69,15 @@ const FileViewer: React.FC<FileViewerProps> = ({ fileId, onClose, onClassClick, 
             if (token && fileData.ownerId) {
               try {
                 // Decode JWT to get user email
-                const payload = JSON.parse(atob(token.split('.')[1]));
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                  setIsOwner(false);
+                  return;
+                }
+                const payload = JSON.parse(atob(parts[1]));
                 setIsOwner(payload.email === fileData.ownerId || payload.id === fileData.ownerId);
               } catch (err) {
+                console.error('Error decoding JWT token:', err);
                 setIsOwner(false);
               }
             }
