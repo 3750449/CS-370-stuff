@@ -4,6 +4,7 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const crypto = require('crypto');
 require('dotenv').config();
 
 // Use MySQL database
@@ -27,31 +28,7 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = '7d'; // 7 days
 
-/**
- * Authentication middleware that verifies JWT tokens from the Authorization header.
- * 
- * Extracts the Bearer token from the Authorization header, verifies it using JWT_SECRET,
- * and attaches the decoded user information to req.user for use in route handlers.
- * 
- * @param {Object} req - Express request object
- * @param {Object} req.headers - Request headers object
- * @param {string} [req.headers.authorization] - Authorization header in format "Bearer <token>"
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {void|Object} Returns 401 error if no token, 403 if invalid/expired, otherwise calls next()
- * 
- * @example
- * // Protect a route
- * app.get('/api/protected', authenticateToken, (req, res) => {
- *   // req.user.id and req.user.email are available here
- *   res.json({ message: 'Access granted', user: req.user });
- * });
- * 
- * @throws {401} If no Authorization header or token is missing
- * @throws {403} If token is invalid, expired, or cannot be verified
- * 
- * @since 1.0.0
- */
+// Guards protected routes by requiring a valid bearer token.
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -67,49 +44,6 @@ function authenticateToken(req, res, next) {
     req.user = user; // Attach user info to request
     next();
   });
-}
-
-/**
- * Optional authentication middleware that attempts to verify JWT tokens but doesn't require them.
- * 
- * Similar to authenticateToken, but allows routes to work with or without authentication.
- * If a valid token is provided, req.user is set. If no token or invalid token, the request
- * continues without req.user. Useful for routes that have different behavior for logged-in users.
- * 
- * @param {Object} req - Express request object
- * @param {Object} req.headers - Request headers object
- * @param {string} [req.headers.authorization] - Authorization header in format "Bearer <token>"
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- * @returns {void} Always calls next(), regardless of token validity
- * 
- * @example
- * // Route that works for both authenticated and anonymous users
- * app.get('/api/files', optionalAuth, (req, res) => {
- *   if (req.user) {
- *     // User is logged in - show personalized content
- *   } else {
- *     // User is anonymous - show public content
- *   }
- * });
- * 
- * @since 1.0.0
- */
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  
-  if (token) {
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (!err) {
-        req.user = user;
-      }
-      // Continue even if token is invalid or missing
-      next();
-    });
-  } else {
-    next();
-  }
 }
 
 // User table configuration
@@ -438,6 +372,86 @@ app.delete('/api/auth/account', async (req, res) => {
   }
 });
 
+/**
+ * Change password for authenticated user.
+ * 
+ * Allows logged-in users to change their password by providing their current password
+ * and a new password. Requires JWT authentication and current password verification.
+ * 
+ * @route PUT /api/auth/password
+ * @access Private (requires JWT token)
+ * @param {Object} req.user - User information from JWT (set by authenticateToken middleware)
+ * @param {string} req.user.id - User ID (email address)
+ * @param {Object} req.body - Request body
+ * @param {string} req.body.currentPassword - User's current password for verification
+ * @param {string} req.body.newPassword - New password (minimum 8 characters)
+ * @returns {Object} 200 - Password changed successfully
+ * @returns {string} 200.message - Success message
+ * @returns {Object} 400 - Missing current password or new password, or password too short
+ * @returns {Object} 401 - Not authenticated or invalid current password
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @example
+ * // Request
+ * PUT /api/auth/password
+ * Headers: { "Authorization": "Bearer <token>" }
+ * {
+ *   "currentPassword": "oldpassword123",
+ *   "newPassword": "newpassword456"
+ * }
+ * 
+ * // Response (200)
+ * {
+ *   "message": "Password changed successfully"
+ * }
+ * 
+ * @since 1.0.0
+ */
+app.put('/api/auth/password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: 'current password and new password are required' });
+    }
+    
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'new password must be at least 8 characters' });
+    }
+    
+    const userId = req.user.id; // email address
+    
+    // Find user and verify current password
+    const rows = await db.all(
+      `SELECT ${EMAIL_COL} AS email, ${PASSWORD_COL} AS passwordHash FROM \`${USER_TABLE}\` WHERE ${EMAIL_COL} = ?`,
+      [userId]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'user not found' });
+    }
+    
+    const record = rows[0];
+    const ok = await bcrypt.compare(currentPassword, record.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'invalid current password' });
+    }
+    
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    // Update user password
+    await db.run(
+      `UPDATE \`${USER_TABLE}\` SET ${PASSWORD_COL} = ? WHERE ${EMAIL_COL} = ?`,
+      [newPasswordHash, userId]
+    );
+    
+    return res.status(200).json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('PUT /api/auth/password failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
 // --- File Upload/Download ---
 // Configure multer for file uploads (store in memory to save to database)
 const upload = multer({
@@ -514,9 +528,12 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
       return res.status(400).json({ error: 'no file uploaded' });
     }
 
-    const { classId } = req.body || {};
+    const { classId, fileName } = req.body || {};
     const file = req.file;
     const userId = req.user.id;
+
+    // Use custom filename if provided, otherwise use original filename
+    const displayName = (fileName && fileName.trim()) ? fileName.trim() : file.originalname;
 
     // Validate classId if provided
     if (classId !== undefined && classId !== null && classId !== '') {
@@ -536,10 +553,10 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
       }
     }
 
-    // Store file in image_store table
+    // Store file in image_store table (use displayName for image_name)
     const imageResult = await db.run(
       'INSERT INTO image_store (image_name, image_data) VALUES (?, ?)',
-      [file.originalname, file.buffer]
+      [displayName, file.buffer]
     );
 
     const fileId = imageResult.insertId || imageResult.lastInsertRowid;
@@ -574,11 +591,11 @@ app.post('/api/files/upload', authenticateToken, upload.single('file'), async (r
       [fileId]
     );
 
-    const fileData = fileRows[0] || { id: fileId, image_name: file.originalname };
+    const fileData = fileRows[0] || { id: fileId, image_name: displayName };
 
     return res.status(201).json({
       id: fileId,
-      originalName: file.originalname,
+      originalName: displayName,
       size: file.size,
       fileType: fileType,
       classId: fileData.classId ? Number(fileData.classId) : null,
@@ -651,6 +668,29 @@ app.get('/api/files', async (req, res) => {
     const { search, classId } = req.query;
     
     // Join image_store with Note_Files and classes using fileID
+    const hasClassFilter = classId !== undefined && classId !== null && classId !== '';
+    let classIds = [];
+    
+    if (hasClassFilter) {
+      // Support both single classId and comma-separated multiple classIds
+      classIds = Array.isArray(classId) 
+        ? classId 
+        : typeof classId === 'string' 
+          ? classId.split(',').map(id => id.trim()).filter(id => id)
+          : [classId.toString()];
+    }
+    
+    // "no-class" is a sentinel ID coming from the UI – keep track so we can include uploads without associations.
+    const hasNoClassFilter = classIds.some(id => String(id).toLowerCase() === 'no-class');
+    const numericClassIds = classIds
+      .filter(id => String(id).toLowerCase() !== 'no-class')
+      .map(id => Number(id))
+      .filter(id => Number.isInteger(id) && id > 0);
+    
+    // INNER JOIN is only safe when every requested class ID exists; once "no-class" is requested
+    // we must keep the LEFT JOIN so uploads without class metadata stay visible.
+    const useInnerJoinForClass = hasClassFilter && numericClassIds.length > 0 && !hasNoClassFilter;
+    
     let sql = `
       SELECT 
         i.id,
@@ -658,29 +698,69 @@ app.get('/api/files', async (req, res) => {
         COALESCE(nf.size, '0') AS size,
         COALESCE(nf.fileType, 'application/octet-stream') AS fileType,
         COALESCE(nf.LastUpdated, DATE_FORMAT(NOW(), '%Y-%m-%dT%H:%i:%s.%fZ')) AS uploadedAt,
+        nf.ownerID AS ownerId,
         c.id AS classId,
         c.Subject1 AS subject,
         c.Catalog1 AS catalog,
         c.Long_Title AS classTitle,
         c.CS_Number AS csNumber
       FROM image_store i
-      LEFT JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
-      LEFT JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
+      INNER JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
+      ${useInnerJoinForClass ? 'INNER' : 'LEFT'} JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
     `;
     
     const params = [];
     const conditions = [];
 
     if (search && typeof search === 'string') {
-      conditions.push('i.image_name LIKE ?');
-      params.push(`%${search}%`);
+      const normalizedSearch = search.trim().toLowerCase();
+      if (normalizedSearch) {
+        const searchLike = `%${normalizedSearch}%`;
+        // Support both "AMCS 301" and "amcs301" style inputs.
+        const compactSearch = normalizedSearch.replace(/\s+/g, '');
+        const compactLike = `%${compactSearch}%`;
+        const searchClauses = [
+          'LOWER(i.image_name) LIKE ?',
+          'LOWER(COALESCE(nf.fileType, "")) LIKE ?',
+          'LOWER(COALESCE(c.Subject1, "")) LIKE ?',
+          'LOWER(COALESCE(c.Catalog1, "")) LIKE ?',
+          'LOWER(COALESCE(c.Long_Title, "")) LIKE ?',
+          'LOWER(CONCAT_WS(" ", COALESCE(c.Subject1, ""), COALESCE(c.Catalog1, ""))) LIKE ?'
+        ];
+
+        searchClauses.forEach(() => params.push(searchLike));
+
+        if (compactSearch) {
+          searchClauses.push(`LOWER(REPLACE(CONCAT(COALESCE(c.Subject1, ''), COALESCE(c.Catalog1, '')), ' ', '')) LIKE ?`);
+          params.push(compactLike);
+        }
+
+        conditions.push(`(${searchClauses.join(' OR ')})`);
+      }
     }
 
-    if (classId !== undefined && classId !== null && classId !== '') {
-      const classIdNum = Number(classId);
-      if (Number.isInteger(classIdNum) && classIdNum > 0) {
-        conditions.push('c.id = ?');
-        params.push(classIdNum);
+    if (hasClassFilter && (hasNoClassFilter || numericClassIds.length > 0)) {
+      const classConditions = [];
+      
+      // Add filter for files with no class association
+      if (hasNoClassFilter) {
+        classConditions.push('(c.id IS NULL OR nf.classId IS NULL OR nf.classId = "")');
+      }
+      
+      // Add filter for files with specific class IDs
+      if (numericClassIds.length > 0) {
+        if (numericClassIds.length === 1) {
+          classConditions.push('c.id = ?');
+          params.push(numericClassIds[0]);
+        } else {
+          const placeholders = numericClassIds.map(() => '?').join(',');
+          classConditions.push(`c.id IN (${placeholders})`);
+          params.push(...numericClassIds);
+        }
+      }
+      
+      if (classConditions.length > 0) {
+        conditions.push(`(${classConditions.join(' OR ')})`);
       }
     }
 
@@ -689,7 +769,7 @@ app.get('/api/files', async (req, res) => {
     }
 
     sql += ' ORDER BY i.id DESC';
-
+    
     const rows = await db.all(sql, params);
 
     // Format response with class info
@@ -699,6 +779,7 @@ app.get('/api/files', async (req, res) => {
       size: row.size,
       fileType: row.fileType,
       uploadedAt: row.uploadedAt,
+      ownerId: row.ownerId || null,
       class: row.classId ? {
         id: Number(row.classId),
         subject: row.subject,
@@ -854,6 +935,73 @@ app.get('/api/files/bookmarks', authenticateToken, async (req, res) => {
 });
 
 /**
+ * Get all files uploaded by the authenticated user.
+ * 
+ * Returns a list of all files uploaded by the current user. Requires JWT authentication.
+ * Files are returned with their metadata including class information if associated.
+ * 
+ * @route GET /api/files/my-uploads
+ * @access Private (requires JWT token)
+ * @returns {Array<Object>} 200 - Array of file objects
+ * @returns {number} 200[].id - File ID
+ * @returns {string} 200[].originalName - Original filename
+ * @returns {string} 200[].size - File size as string
+ * @returns {string} 200[].fileType - MIME type
+ * @returns {string} 200[].uploadedAt - ISO timestamp of upload
+ * @returns {Object|null} 200[].class - Class information if file is associated with a class
+ * @returns {Object} 401 - Not authenticated
+ * @returns {Object} 500 - Internal server error
+ */
+app.get('/api/files/my-uploads', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const sql = `
+      SELECT 
+        i.id,
+        i.image_name AS originalName,
+        COALESCE(nf.size, '0') AS size,
+        COALESCE(nf.fileType, 'application/octet-stream') AS fileType,
+        COALESCE(nf.LastUpdated, DATE_FORMAT(NOW(), '%Y-%m-%dT%H:%i:%s.%fZ')) AS uploadedAt,
+        nf.ownerID AS ownerId,
+        c.id AS classId,
+        c.Subject1 AS subject,
+        c.Catalog1 AS catalog,
+        c.Long_Title AS classTitle,
+        c.CS_Number AS csNumber
+      FROM image_store i
+      INNER JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
+      LEFT JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
+      WHERE nf.ownerID = ?
+      ORDER BY nf.LastUpdated DESC
+    `;
+
+    const rows = await db.all(sql, [userId]);
+
+    const formattedRows = rows.map(row => ({
+      id: row.id,
+      originalName: row.originalName,
+      size: row.size,
+      fileType: row.fileType,
+      uploadedAt: row.uploadedAt,
+      ownerId: row.ownerId || null,
+      class: row.classId ? {
+        id: Number(row.classId),
+        subject: row.subject,
+        catalog: row.catalog,
+        title: row.classTitle,
+        csNumber: row.csNumber
+      } : null
+    }));
+
+    return res.json(formattedRows);
+  } catch (err) {
+    console.error('GET /api/files/my-uploads failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
+/**
  * Download a file by its ID.
  * 
  * Retrieves file binary data from the database and streams it to the client
@@ -907,6 +1055,62 @@ app.get('/api/files/:id', async (req, res) => {
     return res.send(file.image_data);
   } catch (err) {
     console.error('GET /api/files/:id failed:', err);
+    return res.status(500).json({ error: 'internal server error' });
+  }
+});
+
+/**
+ * Get file preview (for inline display, not download).
+ * 
+ * Similar to GET /api/files/:id but without Content-Disposition: attachment header,
+ * allowing files to be displayed inline in browsers (e.g., PDFs in iframes, images in img tags).
+ * 
+ * @route GET /api/files/:id/preview
+ * @access Public
+ * @param {Object} req.params - Route parameters
+ * @param {string} req.params.id - File ID (must be positive integer)
+ * @returns {Buffer} 200 - File binary data with inline disposition
+ * @returns {Object} 400 - Invalid file ID format
+ * @returns {Object} 404 - File not found
+ * @returns {Object} 500 - Internal server error
+ * 
+ * @since 1.0.0
+ */
+app.get('/api/files/:id/preview', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'invalid file id' });
+    }
+
+    const rows = await db.all(
+      'SELECT id, image_name, image_data FROM image_store WHERE id = ?',
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'file not found' });
+    }
+
+    const file = rows[0];
+    
+    // Get file type from Note_Files if available
+    const fileMetaRows = await db.all(
+      'SELECT fileType FROM Note_Files WHERE fileID = ?',
+      [id.toString()]
+    );
+    const fileType = fileMetaRows.length > 0 && fileMetaRows[0].fileType 
+      ? fileMetaRows[0].fileType 
+      : 'application/octet-stream';
+    
+    // Set headers for inline display (no attachment header)
+    res.setHeader('Content-Type', fileType);
+    res.setHeader('Content-Length', file.image_data.length);
+    // No Content-Disposition header = inline display
+
+    return res.send(file.image_data);
+  } catch (err) {
+    console.error('GET /api/files/:id/preview failed:', err);
     return res.status(500).json({ error: 'internal server error' });
   }
 });
