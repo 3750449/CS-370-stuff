@@ -7,6 +7,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: box-shadow 0.2s ease;
+}
+
+.tile:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .tile-header {
@@ -16,20 +21,207 @@
   color: #666;
 }
 
+.tile-class {
+  font-weight: 600;
+  color: #007bff;
+}
+
+.clickable-class-code {
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.clickable-class-code:hover {
+  color: #0056b3;
+}
+
+.tile-age {
+  color: #999;
+}
+
+.tile-preview {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tile-preview-image:not([src]) {
+  display: none;
+}
+
+.tile-preview-placeholder {
+  width: 100%;
+  height: 200px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-file-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+}
+
+.tile-loading {
+  font-size: 0.9rem;
+  color: #999;
+  font-style: italic;
+}
+
+.tile-preview-text {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.tile-text-content {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: 'Courier New', Courier, monospace;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.tile-preview-pdf {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  position: relative;
+  clip-path: inset(0);
+}
+
 .tile-title {
   font-size: 1.2rem;
   font-weight: bold;
   margin: 0;
+  word-break: break-word;
 }
 
-.tile-content {
+.tile-title.clickable-title {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.tile-title.clickable-title:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.tile-class-title {
   font-size: 0.9rem;
-  color: #333;
+  color: #666;
+  margin: 0;
+  font-style: italic;
+}
+
+.clickable-class {
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.clickable-class:hover {
+  color: #0056b3;
 }
 
 .tile-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.8rem;
   color: #666;
+  margin-top: auto;
+}
+
+.tile-size {
+  color: #999;
+}
+
+.tile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tile-action-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.tile-action-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.tile-action-btn.download-btn {
+  background: #28a745;
+  color: white;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.tile-action-btn.download-btn:hover {
+  background: #218838;
+  color: white;
+}
+
+.tile-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tile-action-btn.bookmarked {
+  color: #ffc107;
+}
+
+.tile-action-btn.delete-btn {
+  background: #dc3545;
+  color: white;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+
+.tile-action-btn.delete-btn:hover:not(:disabled) {
+  background: #c82333;
+  color: white;
 }

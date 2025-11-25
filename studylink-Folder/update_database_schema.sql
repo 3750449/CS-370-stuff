@@ -212,7 +212,16 @@ ALTER TABLE `User`
 ALTER TABLE `User` ADD PRIMARY KEY (`email`);
 
 -- ============================================================================
--- STEP 4: Normalize classes table collation
+-- STEP 4: Remove password reset tokens table (if exists)
+-- ============================================================================
+-- Password reset via email tokens has been removed.
+-- Users can now change their password while logged in using the password change endpoint.
+-- If the table exists, drop it.
+
+DROP TABLE IF EXISTS `password_reset_tokens`;
+
+-- ============================================================================
+-- STEP 5: Normalize classes table collation
 -- =========================================================================
 -- Ensure classes table uses utf8mb4_unicode_ci so joins with Note_Files.classId work
 ALTER TABLE `classes`
@@ -256,6 +265,10 @@ ALTER TABLE `classes`
 --   - createdAt: DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 --   - UNIQUE constraint on (userId, fileId)
 --   - Indexes on userId and fileId
+--
+-- Password Reset Tokens Table (REMOVED):
+--   - Password reset via email tokens has been removed
+--   - Users can change password while logged in using PUT /api/auth/password
 -- ============================================================================
 
 -- =========================================================================

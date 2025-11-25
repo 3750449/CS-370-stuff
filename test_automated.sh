@@ -11,6 +11,7 @@ command -v python3 >/dev/null || {
 }
 
 BASE_URL=${1:-"http://localhost:8199"}
+BASE_URL=${BASE_URL%/}  # Remove trailing slash if present
 JSON_HDR=( -H "Content-Type: application/json" )
 
 pass=0; fail=0
@@ -181,4 +182,3 @@ assert_code "Download deleted file → 404" "$code" 404
 
 hr; echo "Pass: $pass   Fail: $fail"; hr
 if [[ $fail -eq 0 ]]; then exit 0; else exit 1; fi
-

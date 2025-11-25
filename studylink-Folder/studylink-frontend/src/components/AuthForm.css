@@ -1,74 +1,358 @@
-.auth-card {
-  border: 1px solid #ddd;
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-
-.auth-header {
+.auth-page-container {
+  min-height: calc(100vh - 73px);
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  padding: 2rem 1rem;
+  position: relative;
 }
 
-.auth-header button {
-  border: 1px solid #ccc;
-  background: #f7f7f7;
-  padding: 6px 10px;
-  border-radius: 6px;
+.auth-back-link {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+}
+
+.back-home-btn {
+  background: none;
+  border: none;
+  color: #666;
   cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  text-decoration: underline;
+  transition: color 0.2s ease;
 }
 
-.auth-header button.active {
-  background: #0d6efd;
+.back-home-btn:hover {
+  color: #007bff;
+}
+
+.auth-card {
+  background: #fff;
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.auth-logo {
+  margin-bottom: 1.5rem;
+}
+
+.logo-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   color: white;
-  border-color: #0d6efd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 auto;
+}
+
+.auth-welcome {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.account-header {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.account-email {
+  margin: 0.2rem 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.account-email strong {
+  color: #222;
+}
+
+.auth-subtitle {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
 }
 
 .auth-form {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  text-align: left;
 }
 
-.auth-form label {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.auth-form input {
-  padding: 8px;
+.form-field label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
-.auth-form button[type="submit"] {
-  background: #0d6efd;
+.form-field input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 2.5rem;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  padding: 0.875rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background: #218838;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-message {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.auth-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.auth-message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.field-error {
+  font-size: 0.85rem;
+  color: #dc3545;
+  margin-top: 0.25rem;
+}
+
+.auth-switch {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+  padding: 0;
+}
+
+.auth-link:hover {
+  color: #0056b3;
+}
+
+/* Account Settings Styles */
+.account-settings-menu {
+  margin-top: 2rem;
+}
+
+.account-menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.account-menu-item {
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+.account-menu-item:hover {
+  background-color: #f5f5f5;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.account-menu-item.logout-item {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.account-menu-item.logout-item:hover {
+  background-color: #fff5f5;
+  border-color: #c82333;
+  color: #c82333;
+}
+
+.account-settings {
+  margin-top: 2rem;
+}
+
+.account-settings h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.back-to-menu-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  transition: color 0.2s ease;
+}
+
+.back-to-menu-btn:hover {
+  color: #0056b3;
+}
+
+.my-uploads-list {
+  margin-top: 1.5rem;
+}
+
+.my-upload-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  background-color: #fff;
+  gap: 1rem;
+}
+
+.my-upload-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.my-upload-info strong {
+  color: #333;
+  font-size: 1rem;
+}
+
+.my-upload-class {
+  color: #007bff;
+  font-size: 0.9rem;
+}
+
+.my-upload-info small {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.my-upload-delete-btn {
+  background: #dc3545;
+  color: #fff;
+  border: 1px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.my-upload-delete-btn:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.my-upload-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+.logout-button {
+  background: #dc3545;
   color: white;
   border: none;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-}
-
-.auth-message {
-  margin-top: 6px;
   font-size: 14px;
 }
 
-.email-limit-warning {
-  font-size: 12px;
-  color: #dc3545;
-  margin-top: 4px;
-  font-weight: 500;
+.logout-button:hover {
+  background: #c82333;
 }
 
-.password-mismatch {
-  font-size: 12px;
-  color: #dc3545;
-  margin-top: 4px;
-  font-weight: 500;
+.auth-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }
-
-

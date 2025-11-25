@@ -1,7 +1,206 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.grid-loading,
+.grid-error,
+.grid-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.grid-loading {
+  font-size: 1.1rem;
+}
+
+.grid-error {
+  color: #dc3545;
+}
+
+.grid-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.grid-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.grid-empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1rem 0;
+}
+
+.grid-empty-message {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+}
+
+.grid-empty-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.grid-empty-action-btn {
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.grid-empty-action-btn.primary {
+  background-color: #dc3545;
+  color: #fff;
+  border: 1px solid #dc3545;
+}
+
+.grid-empty-action-btn.primary:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.grid-empty-suggestion {
+  font-size: 0.95rem;
+  color: #888;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.grid-empty-link-btn {
+  background: none;
+  border: none;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.grid-empty-link-btn:hover {
+  color: #0056b3;
+}
+
+.bookmarks-page,
+.my-uploads-page {
+  width: 100%;
+}
+
+.page-with-search .search-bar-wrapper,
+.bookmarks-page .search-bar-wrapper,
+.my-uploads-page .search-bar-wrapper {
+  margin-bottom: 2rem;
+}
+
+.page-with-search .page-title,
+.my-uploads-page .page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.class-filter-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.class-filter-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.breadcrumb-home {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-home:hover {
+  color: #0056b3;
+}
+
+.breadcrumb-separator {
+  color: #999;
+}
+
+.breadcrumb-class {
+  color: #333;
+  font-weight: 500;
+}
+
+.class-filter-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.class-filter-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.class-filter-header h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.clear-class-filter-btn {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.clear-class-filter-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #bbb;
+  color: #333;
+}
+
+.class-filter-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
 }
 
 @media (max-width: 768px) {

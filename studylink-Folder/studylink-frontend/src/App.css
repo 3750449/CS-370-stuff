@@ -1,8 +1,140 @@
 .App {
-    text-align: center;
-    /* New padding to keep components away from edges */
-    padding: 1rem;
+    min-height: 100vh;
+    background-color: #fff;
+    padding-top: 73px; /* Space for fixed header */
+}
 
+/* Add extra padding when filters are active */
+.App.has-active-filters {
+    padding-top: 120px; /* Space for header + filter bar */
+}
+
+/* Add spacing after header before content starts */
+.home-page {
+    padding-top: 2rem;
+}
+
+.home-welcome {
+    text-align: center;
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+}
+
+.home-welcome h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 1rem 0;
+}
+
+.home-welcome p {
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.inline-link-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.inline-link-btn:hover {
+    color: #0056b3;
+}
+
+.filter-indicator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.filter-tag-remove {
+    background: none;
+    border: none;
+    color: #1976d2;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.filter-tag-remove:hover {
+    background-color: rgba(25, 118, 210, 0.1);
+}
+
+.App > * {
+    text-align: left;
+}
+
+.page {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.page-content {
+    text-align: left;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-content h2 {
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.page-content h3 {
+    color: #333;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.page-content ul {
+    margin-left: 2rem;
+    line-height: 1.8;
+}
+
+.page-content li {
+    margin-bottom: 0.5rem;
 }
 
 .site-header {
@@ -19,4 +151,14 @@
     padding: 20px;
     border-top: 1px solid #ddd;
     margin-top: 40px;
+}
+
+.home-page {
+    width: 100%;
+}
+
+.home-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
 }

@@ -1,0 +1,224 @@
+.file-viewer-page {
+  min-height: calc(100vh - 73px);
+  background-color: #fff;
+  padding: 0;
+  margin: 0;
+}
+
+.file-viewer-header-section {
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 2rem 0;
+}
+
+.file-viewer-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.file-viewer-document-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.3;
+}
+
+.file-viewer-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.file-viewer-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-viewer-meta-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.file-viewer-meta-value {
+  color: #333;
+}
+
+.clickable-course {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.clickable-course:hover {
+  color: #0056b3;
+}
+
+.file-viewer-actions-bar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.file-viewer-save-btn {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-viewer-save-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #bbb;
+  color: #333;
+}
+
+.file-viewer-save-btn.saved {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.file-viewer-save-btn.saved:hover {
+  background-color: #ffe69c;
+}
+
+.file-viewer-download-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-viewer-download-btn:hover {
+  background: #218838;
+}
+
+.file-viewer-delete-btn {
+  background: #dc3545;
+  color: #fff;
+  border: 1px solid #dc3545;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-viewer-delete-btn:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.file-viewer-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-viewer-back-btn {
+  background: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-viewer-back-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #bbb;
+  color: #333;
+}
+
+.file-viewer-content-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 400px);
+}
+
+.file-viewer-iframe {
+  width: 100%;
+  min-height: 800px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.file-viewer-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.file-viewer-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.file-viewer-loading,
+.file-viewer-error {
+  padding: 4rem 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.file-viewer-error {
+  color: #dc3545;
+}
+
+@media (max-width: 768px) {
+  .file-viewer-header-content {
+    padding: 0 1rem;
+  }
+  
+  .file-viewer-document-title {
+    font-size: 1.4rem;
+  }
+  
+  .file-viewer-metadata {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .file-viewer-content-section {
+    padding: 1rem;
+  }
+  
+  .file-viewer-iframe {
+    min-height: 600px;
+  }
+}
