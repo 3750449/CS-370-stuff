@@ -332,6 +332,8 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .filter-tag {

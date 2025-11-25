@@ -301,11 +301,14 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
                   ))}
               </div>
             </div>
-            {selectedClassId && (
-              <div className="selected-class-display">
-                Selected: {classes.find(c => c.id.toString() === selectedClassId)?.subject} {classes.find(c => c.id.toString() === selectedClassId)?.catalog} - {classes.find(c => c.id.toString() === selectedClassId)?.title}
-              </div>
-            )}
+            {selectedClassId && (() => {
+              const selectedClass = classes.find(c => c.id.toString() === selectedClassId);
+              return selectedClass ? (
+                <div className="selected-class-display">
+                  Selected: {selectedClass.subject} {selectedClass.catalog} - {selectedClass.title}
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Submit Button */}
@@ -335,7 +338,7 @@ export default function UploadPage({ onUploadSuccess, onNavigateToLogin, onNavig
         )}
 
         {/* Link to View All Uploads */}
-        {isAuthenticated && onNavigateToMyUploads && (
+        {onNavigateToMyUploads && (
           <div className="view-uploads-section">
             <p>
               <button

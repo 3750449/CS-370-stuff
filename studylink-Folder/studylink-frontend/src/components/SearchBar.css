@@ -92,6 +92,11 @@
   gap: 0.5rem;
 }
 
+.selected-filters {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
 .filter-tag {
   background-color: #eef2ff;
   color: #1e3a8a;

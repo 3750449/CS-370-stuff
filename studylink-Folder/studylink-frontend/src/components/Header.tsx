@@ -142,8 +142,8 @@ const Header: React.FC<HeaderProps> = ({
     const handleLogout = () => {
         if (confirm('Are you sure you want to log out?')) {
             localStorage.removeItem('token');
-            // Force page reload to update authentication state
-            window.location.href = '/';
+            // Reload the current page to update authentication state
+            window.location.reload();
         }
     };
     
@@ -380,7 +380,7 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
             )}
         </>
-    )
+    );
 }
 
 export default Header

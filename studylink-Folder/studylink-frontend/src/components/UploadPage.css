@@ -210,19 +210,13 @@
 }
 
 .message {
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-.message {
   margin-top: 1rem;
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  font-weight: 500;
 }
 
 .message.success {
