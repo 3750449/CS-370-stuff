@@ -1,3 +1,48 @@
+/* Design System Variables */
+:root {
+  /* Colors */
+  --primary-blue: #007bff;
+  --primary-blue-dark: #0056b3;
+  --primary-blue-light: #e3f2fd;
+  --success-green: #2fbe6e;
+  --success-green-dark: #25a35c;
+  --danger-red: #dc3545;
+  --danger-red-dark: #c82333;
+  --text-dark: #333;
+  --text-medium: #666;
+  --text-light: #999;
+  --border-color: #ddd;
+  --border-color-light: #e0e0e0;
+  --bg-light: #f8f9fa;
+  --bg-white: #fff;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 2.5rem;
+  --spacing-3xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 50%;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 4px 16px rgba(0, 123, 255, 0.3);
+  --shadow-primary: 0 2px 6px rgba(0, 123, 255, 0.3);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
 
 body {
   margin: 0;
@@ -6,7 +51,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fff;
+  background-color: var(--bg-white);
 }
 
 code {
