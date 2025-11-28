@@ -30,6 +30,9 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
   
+  // Unified password visibility toggle - controls all password fields
+  const [showPasswords, setShowPasswords] = useState(false);
+  
 
   function getEmailFromToken(token: string | null): string | null {
     if (!token) return null;
@@ -242,38 +245,68 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
               <form onSubmit={handlePasswordChange} className="auth-form">
                 <div className="form-field">
                   <label htmlFor="currentPassword">Current Password*</label>
-                  <input
-                    id="currentPassword"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter your current password"
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      id="currentPassword"
+                      type={showPasswords ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter your current password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPasswords(!showPasswords)}
+                      aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                    >
+                      {showPasswords ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-field">
                   <label htmlFor="newPassword">New Password*</label>
-                  <input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    minLength={8}
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      id="newPassword"
+                      type={showPasswords ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      minLength={8}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPasswords(!showPasswords)}
+                      aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                    >
+                      {showPasswords ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-field">
                   <label htmlFor="confirmNewPassword">Confirm New Password*</label>
-                  <input
-                    id="confirmNewPassword"
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    placeholder="Re-enter your new password"
-                    minLength={8}
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      id="confirmNewPassword"
+                      type={showPasswords ? "text" : "password"}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Re-enter your new password"
+                      minLength={8}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowPasswords(!showPasswords)}
+                      aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                    >
+                      {showPasswords ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   {confirmNewPassword && newPassword !== confirmNewPassword && (
                     <div className="field-error">
                       Passwords do not match
@@ -286,7 +319,16 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
               </form>
               
               {message && (
-                <div className={`auth-message ${message.includes('error') || message.includes('Failed') || message.includes('do not match') ? 'error' : 'success'}`}>
+                <div className={`auth-message ${
+                  message.toLowerCase().includes('error') || 
+                  message.toLowerCase().includes('failed') || 
+                  message.toLowerCase().includes('do not match') || 
+                  message.toLowerCase().includes('invalid') || 
+                  message.toLowerCase().includes('network error') ||
+                  message.toLowerCase().includes('must be at least')
+                    ? 'error' 
+                    : 'success'
+                }`}>
                   {message}
                 </div>
               )}
@@ -342,13 +384,21 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
             <div className="password-input-wrapper">
           <input
                 id="password"
-            type="password"
+            type={showPasswords ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters"
             minLength={8}
             required
           />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPasswords(!showPasswords)}
+                aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+              >
+                {showPasswords ? "Hide" : "Show"}
+              </button>
             </div>
           </div>
           
@@ -358,13 +408,21 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
               <div className="password-input-wrapper">
             <input
                   id="confirmPassword"
-              type="password"
+              type={showPasswords ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
               minLength={8}
               required
             />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPasswords(!showPasswords)}
+                aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+              >
+                {showPasswords ? "Hide" : "Show"}
+              </button>
               </div>
             {confirmPassword && password !== confirmPassword && (
                 <div className="field-error">
@@ -379,7 +437,15 @@ export default function AuthForm({ onLoginSuccess, onNavigateHome, onNavigateToB
         </button>
           
           {message && (
-            <div className={`auth-message ${message.includes('error') || message.includes('Failed') || message.includes('do not match') ? 'error' : 'success'}`}>
+            <div className={`auth-message ${
+              message.toLowerCase().includes('error') || 
+              message.toLowerCase().includes('failed') || 
+              message.toLowerCase().includes('do not match') || 
+              message.toLowerCase().includes('invalid') ||
+              message.toLowerCase().includes('network error')
+                ? 'error' 
+                : 'success'
+            }`}>
               {message}
             </div>
           )}
