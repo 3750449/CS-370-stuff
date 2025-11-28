@@ -7,7 +7,16 @@ const multer = require('multer');
 require('dotenv').config();
 
 // Use MySQL database
-const db = require('./db.mysql');
+let db;
+try {
+  db = require('./db.mysql.js');
+} catch (err) {
+  console.error('❌ ERROR: Failed to load MySQL database module');
+  console.error('   Error:', err.message);
+  console.error('   Make sure db.mysql.js exists and MySQL environment variables are set');
+  console.error('   Required env vars: MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 8199;
