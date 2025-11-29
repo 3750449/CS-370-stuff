@@ -6,8 +6,22 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 require('dotenv').config();
 
-// Use MySQL database
-const db = require('./db.mysql');
+// Use MySQL database (production) - DO NOT use db.js (SQLite)
+let db;
+try {
+  // Explicitly require MySQL database module
+  const dbPath = path.join(__dirname, 'db.mysql.js');
+  db = require(dbPath);
+  console.log('✅ Loaded MySQL database module');
+} catch (err) {
+  console.error('❌ ERROR: Failed to load MySQL database module');
+  console.error('   Error:', err.message);
+  console.error('   Make sure db.mysql.js exists and MySQL environment variables are set');
+  console.error('   Required env vars: MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE');
+  console.error('   Current working directory:', __dirname);
+  console.error('   Attempted path:', path.join(__dirname, 'db.mysql.js'));
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 8199;

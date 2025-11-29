@@ -1,0 +1,6 @@
+# Railway ignore file - exclude SQLite files from deployment
+db.js
+*.db
+studylink.db
+db.sqlite.js
+
