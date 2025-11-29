@@ -719,7 +719,7 @@ app.get('/api/files', async (req, res) => {
         c.CS_Number AS csNumber
       FROM image_store i
       INNER JOIN Note_Files nf ON CAST(i.id AS CHAR) = nf.fileID
-      ${useInnerJoinForClass ? 'INNER' : 'LEFT'} JOIN classes c ON nf.classId COLLATE utf8mb4_unicode_ci = CAST(c.id AS CHAR) COLLATE utf8mb4_unicode_ci
+      ${useInnerJoinForClass ? 'INNER' : 'LEFT'} JOIN classes c ON nf.classId = CAST(c.id AS CHAR)
     `;
     
     const params = [];
